@@ -35,6 +35,10 @@ jobs:
             echo "::error::The 'folder' input must not be empty."
             exit 1
           fi
+          if echo "$FOLDER" | grep -qE '\.\.|/'; then
+            echo "::error::The 'folder' input must be a plain folder name with no path separators or '..' components."
+            exit 1
+          fi
           if [ ! -d "$FOLDER" ]; then
             echo "::error::Folder '$FOLDER' does not exist in the repository."
             exit 1
