@@ -28,8 +28,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate folder input
+        env:
+          FOLDER: ${{ github.event.inputs.folder }}
         run: |
-          FOLDER="${{ github.event.inputs.folder }}"
           if [ -z "$FOLDER" ]; then
             echo "::error::The 'folder' input must not be empty."
             exit 1
