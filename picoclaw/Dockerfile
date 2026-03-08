@@ -3,8 +3,6 @@ FROM sipeed/picoclaw:latest
 
 USER root
 
-# Install curl, Node.js, npm, and uv (uv available in Alpine community repo since 3.21)
-RUN apk add --no-cache curl nodejs npm uv
-
-# Ensure installed binaries are on PATH without requiring manual PATH configuration
-ENV PATH="/usr/local/bin:/usr/bin:/bin:${PATH}"
+# Install curl, Node.js, npm via apk, and uv via the official installer script
+RUN apk add --no-cache curl nodejs npm && \
+    curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
