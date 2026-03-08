@@ -2,11 +2,6 @@ name: Build and Push picoclaw Docker Image
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Docker image tag'
-        required: false
-        default: 'latest'
 
 env:
   REGISTRY: ghcr.io
@@ -39,7 +34,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ github.event.inputs.tag || 'latest' }}
+            type=sha,format=long
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
