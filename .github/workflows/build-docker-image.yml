@@ -1,0 +1,88 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: 'Folder name containing the Dockerfile (e.g. picoclaw)'
+        required: true
+        type: string
+      registry:
+        description: 'Container registry to push to'
+        required: true
+        type: choice
+        options:
+          - ghcr.io
+          - docker.io
+        default: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate folder input
+        env:
+          FOLDER: ${{ github.event.inputs.folder }}
+        run: |
+          if [ -z "$FOLDER" ]; then
+            echo "::error::The 'folder' input must not be empty."
+            exit 1
+          fi
+          if echo "$FOLDER" | grep -qE '\.\.|/'; then
+            echo "::error::The 'folder' input must be a plain folder name with no path separators or '..' components."
+            exit 1
+          fi
+          if [ ! -d "$FOLDER" ]; then
+            echo "::error::Folder '$FOLDER' does not exist in the repository."
+            exit 1
+          fi
+          if [ ! -f "$FOLDER/Dockerfile" ]; then
+            echo "::error::No Dockerfile found inside '$FOLDER'."
+            exit 1
+          fi
+          echo "Validation passed: '$FOLDER/Dockerfile' exists."
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (ghcr.io)
+        if: ${{ github.event.inputs.registry == 'ghcr.io' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub (docker.io)
+        if: ${{ github.event.inputs.registry == 'docker.io' }}
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ github.event.inputs.registry }}/${{ github.repository_owner }}/${{ github.event.inputs.folder }}
+          tags: |
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ github.event.inputs.folder }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
