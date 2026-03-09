@@ -95,6 +95,7 @@ jobs:
           images: ${{ github.event.inputs.registry }}/${{ steps.owner.outputs.username }}/${{ github.event.inputs.folder }}
           tags: |
             type=sha,format=short
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
