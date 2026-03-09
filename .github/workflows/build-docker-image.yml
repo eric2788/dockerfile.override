@@ -68,25 +68,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Resolve image owner for Docker Hub
+      - name: Resolve image owner
         id: owner
-        if: ${{ github.event.inputs.registry == 'docker.io' }}
         env:
+          REGISTRY: ${{ github.event.inputs.registry }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: |
-          if [ -z "$DOCKERHUB_USERNAME" ]; then
-            echo "::error::The 'DOCKERHUB_USERNAME' secret is not set or is empty. Please configure it in the repository secrets."
-            exit 1
-          fi
-          echo "username=$DOCKERHUB_USERNAME" >> $GITHUB_OUTPUT
-
-      - name: Resolve image owner for GitHub Container Registry
-        id: owner
-        if: ${{ github.event.inputs.registry == 'ghcr.io' }}
-        env:
           GITHUB_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "username=$GITHUB_OWNER" >> $GITHUB_OUTPUT
+          if [ "$REGISTRY" = "docker.io" ]; then
+            if [ -z "$DOCKERHUB_USERNAME" ]; then
+              echo "::error::The 'DOCKERHUB_USERNAME' secret is not set or is empty. Please configure it in the repository secrets."
+              exit 1
+            fi
+            printf 'username=%s\n' "$DOCKERHUB_USERNAME" >> "$GITHUB_OUTPUT"
+          elif [ "$REGISTRY" = "ghcr.io" ]; then
+            printf 'username=%s\n' "$GITHUB_OWNER" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unsupported registry: $REGISTRY"
+            exit 1
+          fi
 
       - name: Extract metadata for Docker
         id: meta
