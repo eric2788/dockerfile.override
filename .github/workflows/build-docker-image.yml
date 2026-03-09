@@ -68,21 +68,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Resolve image owner
+      - name: Resolve image owner for Docker Hub
         id: owner
+        if: ${{ github.event.inputs.registry == 'docker.io' }}
         env:
-          REGISTRY: ${{ github.event.inputs.registry }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          echo "username=$DOCKERHUB_USERNAME" >> $GITHUB_OUTPUT
+
+      - name: Resolve image owner for GitHub Container Registry
+        id: owner
+        if: ${{ github.event.inputs.registry == 'ghcr.io' }}
+        env:
           GITHUB_OWNER: ${{ github.repository_owner }}
         run: |
-          if [ "$REGISTRY" = "docker.io" ]; then
-            echo "username=$DOCKERHUB_USERNAME" >> $GITHUB_OUTPUT
-          elif [ "$REGISTRY" = "ghcr.io" ]; then
-            echo "username=$GITHUB_OWNER" >> $GITHUB_OUTPUT
-          else
-            echo "::error::Unsupported registry: $REGISTRY"
-            exit 1
-          fi
+          echo "username=$GITHUB_OWNER" >> $GITHUB_OUTPUT
 
       - name: Extract metadata for Docker
         id: meta
