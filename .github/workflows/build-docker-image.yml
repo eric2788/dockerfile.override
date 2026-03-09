@@ -68,11 +68,31 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Resolve image owner
+        id: owner
+        env:
+          REGISTRY: ${{ github.event.inputs.registry }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [ "$REGISTRY" = "docker.io" ]; then
+            if [ -z "$DOCKERHUB_USERNAME" ]; then
+              echo "::error::The 'DOCKERHUB_USERNAME' secret is not set or is empty. Please configure it in the repository secrets."
+              exit 1
+            fi
+            printf 'username=%s\n' "$DOCKERHUB_USERNAME" >> "$GITHUB_OUTPUT"
+          elif [ "$REGISTRY" = "ghcr.io" ]; then
+            printf 'username=%s\n' "$GITHUB_OWNER" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unsupported registry: $REGISTRY"
+            exit 1
+          fi
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ github.event.inputs.registry }}/${{ github.repository_owner }}/${{ github.event.inputs.folder }}
+          images: ${{ github.event.inputs.registry }}/${{ steps.owner.outputs.username }}/${{ github.event.inputs.folder }}
           tags: |
             type=sha,format=short
 
