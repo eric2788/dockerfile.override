@@ -74,6 +74,10 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
+          if [ -z "$DOCKERHUB_USERNAME" ]; then
+            echo "::error::The 'DOCKERHUB_USERNAME' secret is not set or is empty. Please configure it in the repository secrets."
+            exit 1
+          fi
           echo "username=$DOCKERHUB_USERNAME" >> $GITHUB_OUTPUT
 
       - name: Resolve image owner for GitHub Container Registry
