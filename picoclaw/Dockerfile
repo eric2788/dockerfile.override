@@ -1,5 +1,5 @@
 # Pin to a specific digest for reproducible builds, or update the tag as needed.
-FROM sipeed/picoclaw:launcher
+FROM sipeed/picoclaw:nightly-launcher
 
 USER root
 
